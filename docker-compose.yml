@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  gitbook-app:
+    container_name: gitbook-manual-site
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+    restart: unless-stopped
+    # volumes commented out for production
+    # Uncomment below for development with hot reload
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules
+    #   - /app/.next
+    networks:
+      - gitbook-network
+
+  # Development service (for local development)
+  gitbook-dev:
+    container_name: gitbook-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - gitbook-network
+    profiles:
+      - dev
+
+networks:
+  gitbook-network:
+    driver: bridge
+
+# Future: Database services will be added here
+# volumes:
+#   gitbook-db-data:
