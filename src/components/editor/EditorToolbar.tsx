@@ -19,6 +19,9 @@ import {
   Redo,
   FileCode,
   ImagePlus,
+  Link2,
+  Hash,
+  Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,7 +30,12 @@ interface EditorToolbarProps {
   isPreviewMode: boolean;
   onTogglePreview: () => void;
   onOpenImageManager?: () => void;
+  onOpenFindReplace?: () => void;
   isSaving?: boolean;
+  isScrollSyncEnabled?: boolean;
+  onToggleScrollSync?: () => void;
+  showTOC?: boolean;
+  onToggleTOC?: () => void;
 }
 
 export function EditorToolbar({
@@ -35,7 +43,12 @@ export function EditorToolbar({
   isPreviewMode,
   onTogglePreview,
   onOpenImageManager,
+  onOpenFindReplace,
   isSaving,
+  isScrollSyncEnabled = true,
+  onToggleScrollSync,
+  showTOC = false,
+  onToggleTOC,
 }: EditorToolbarProps) {
   const ToolButton = ({
     icon: Icon,
@@ -107,6 +120,15 @@ export function EditorToolbar({
         {/* History */}
         <ToolButton icon={Undo} action="undo" title="Undo (⌘Z)" />
         <ToolButton icon={Redo} action="redo" title="Redo (⌘⇧Z)" />
+        
+        <Separator />
+        
+        {/* Find & Replace */}
+        <ToolButton 
+          icon={Search} 
+          title="Find & Replace (⌘F)"
+          onClick={onOpenFindReplace}
+        />
       </div>
 
       <div className="flex items-center gap-2">
@@ -115,6 +137,38 @@ export function EditorToolbar({
           <span className="text-xs text-gray-500 dark:text-gray-400">
             Saving...
           </span>
+        )}
+        
+        {/* TOC Toggle */}
+        {onToggleTOC && (
+          <button
+            onClick={onToggleTOC}
+            className={cn(
+              "p-2 rounded transition-colors",
+              showTOC
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800"
+            )}
+            title="Toggle Table of Contents"
+          >
+            <Hash className="h-4 w-4" />
+          </button>
+        )}
+        
+        {/* Scroll Sync Toggle */}
+        {onToggleScrollSync && (
+          <button
+            onClick={onToggleScrollSync}
+            className={cn(
+              "p-2 rounded transition-colors",
+              isScrollSyncEnabled
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800"
+            )}
+            title="Toggle Scroll Sync"
+          >
+            <Link2 className="h-4 w-4" />
+          </button>
         )}
         
         {/* Preview Toggle */}
