@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { MainLayout } from "@/components";
+import { ConditionalLayout } from "@/components/ConditionalLayout";
 import { docsConfig } from "@/lib/config";
 
 const inter = Inter({
@@ -52,9 +52,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="min-h-screen bg-white font-sans antialiased dark:bg-gray-950">
-        <MainLayout sidebarItems={docsConfig.sidebarNav}>
+        <ConditionalLayout sidebarItems={docsConfig.sidebarNav}>
           {children}
-        </MainLayout>
+        </ConditionalLayout>
       </body>
     </html>
   );

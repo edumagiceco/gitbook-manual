@@ -40,3 +40,33 @@ export interface SearchResult {
   url: string;
   content?: string;
 }
+
+export interface FileTreeItem {
+  id: string;
+  name: string;
+  path: string;
+  type: 'file' | 'folder';
+  children?: FileTreeItem[];
+  isModified?: boolean;
+  content?: string;
+}
+
+export interface ContextMenuPosition {
+  x: number;
+  y: number;
+}
+
+export interface Document {
+  id: string;
+  path: string;
+  title: string;
+  content: string;
+  metadata?: {
+    author?: string;
+    date?: Date;
+    tags?: string[];
+    description?: string;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}

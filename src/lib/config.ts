@@ -14,6 +14,10 @@ export const docsConfig: DocsConfig = {
       title: "Examples",
       href: "/examples",
     },
+    {
+      title: "Editor",
+      href: "/editor",
+    },
   ],
   sidebarNav: [
     {

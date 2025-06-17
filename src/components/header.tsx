@@ -38,6 +38,22 @@ export function Header({ onMenuClick, className }: HeaderProps) {
           </span>
         </Link>
 
+        {/* Navigation */}
+        <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
+          <Link href="/docs" className="text-gray-700 hover:text-gray-900 transition-colors dark:text-gray-300 dark:hover:text-gray-100">
+            Docs
+          </Link>
+          <Link href="/guides" className="text-gray-700 hover:text-gray-900 transition-colors dark:text-gray-300 dark:hover:text-gray-100">
+            Guides
+          </Link>
+          <Link href="/examples" className="text-gray-700 hover:text-gray-900 transition-colors dark:text-gray-300 dark:hover:text-gray-100">
+            Examples
+          </Link>
+          <Link href="/editor" className="text-gray-700 hover:text-gray-900 transition-colors dark:text-gray-300 dark:hover:text-gray-100">
+            Editor
+          </Link>
+        </nav>
+
         {/* 검색 */}
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <div className="w-full flex-1 md:w-auto md:flex-none">

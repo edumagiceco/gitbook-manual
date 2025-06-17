@@ -18,9 +18,9 @@ export function slugify(text: string): string {
 }
 
 /**
- * 디바운스 함수
+ * 디바운스 함수 (async 함수 지원)
  */
-export function debounce<T extends (...args: unknown[]) => void>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
