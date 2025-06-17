@@ -79,6 +79,7 @@ export default function EditorPage() {
     const loadDocuments = async () => {
       try {
         const docs = await fetchDocuments();
+        console.log('📁 로드된 문서들:', docs);
         setFileTree(docs.length > 0 ? docs : [
           {
             id: 'getting-started',

@@ -30,14 +30,21 @@ export function FileTree({
     item: FileTreeItem;
   } | null>(null);
 
+  console.log('🌳 FileTree 렌더링 - items:', items);
+  console.log('🌳 FileTree 렌더링 - expandedPaths:', Array.from(expandedPaths));
+
   const handleToggleExpand = useCallback((path: string) => {
+    console.log('🔄 폴더 토글:', path);
     setExpandedPaths((prev) => {
       const next = new Set(prev);
       if (next.has(path)) {
+        console.log('📁 폴더 닫기:', path);
         next.delete(path);
       } else {
+        console.log('📂 폴더 열기:', path);
         next.add(path);
       }
+      console.log('🗂️ 업데이트된 확장 경로들:', Array.from(next));
       return next;
     });
   }, []);
