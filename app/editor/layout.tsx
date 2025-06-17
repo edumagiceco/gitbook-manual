@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { EditorLayout } from "@/components/editor/EditorLayout";
 
 export const metadata: Metadata = {
   title: "Editor | GitBook Manual Site",
@@ -12,8 +11,8 @@ export default function EditorPageLayout({
   children: React.ReactNode;
 }) {
   return (
-    <EditorLayout>
+    <div className="h-screen">
       {children}
-    </EditorLayout>
+    </div>
   );
 }

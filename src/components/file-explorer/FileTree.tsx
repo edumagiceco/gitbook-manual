@@ -10,7 +10,7 @@ interface FileTreeProps {
   onSelect?: (item: FileTreeItem) => void;
   onCreateFile?: (parentPath: string) => void;
   onCreateFolder?: (parentPath: string) => void;
-  onRename?: (item: FileTreeItem, newName: string) => void;
+  onRename?: (item: FileTreeItem) => void;
   onDelete?: (item: FileTreeItem) => void;
   selectedPath?: string;
 }
@@ -74,10 +74,7 @@ export function FileTree({
           onCreateFolder?.(item.type === 'folder' ? item.path : item.path.split('/').slice(0, -1).join('/'));
           break;
         case 'rename':
-          const newName = prompt('Enter new name:', item.name);
-          if (newName && newName !== item.name) {
-            onRename?.(item, newName);
-          }
+          onRename?.(item);
           break;
         case 'delete':
           if (confirm(`Are you sure you want to delete "${item.name}"?`)) {

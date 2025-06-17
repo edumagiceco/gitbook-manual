@@ -1,60 +1,48 @@
 ---
 title: Welcome to GitBook Manual
-description: Get started with our documentation platform
-author: GitBook Team
-createdAt: 2024-12-23T10:00:00Z
-updatedAt: 2024-12-23T10:00:00Z
-tags: [introduction, getting-started]
+tags: [getting-started, introduction, manual]
+createdAt: 2025-06-17T00:00:00.000Z
+updatedAt: 2025-06-17T00:00:00.000Z
 ---
 
 # Welcome to GitBook Manual
 
-Welcome to our GitBook-style documentation platform! This is a powerful tool for creating and managing your documentation.
+Welcome to the **GitBook Manual Site** - your comprehensive documentation platform built with Next.js and modern web technologies.
 
-## Features
+## What is GitBook Manual?
 
-### 📝 Markdown Editor
-Write your documentation using our intuitive markdown editor with:
-- **Live preview** - See your changes in real-time
-- **Syntax highlighting** - Beautiful code blocks
-- **Toolbar** - Quick formatting options
-- **Auto-save** - Never lose your work
+GitBook Manual is a powerful content management system designed for creating, editing, and organizing documentation. It features:
 
-### 📁 File Management
-Organize your documentation with:
-- Hierarchical file structure
-- Drag and drop support
-- Context menus
-- Search functionality
-
-### 🎨 Beautiful Rendering
-Your documentation will look great with:
-- Clean, modern design
-- Responsive layout
-- Dark mode support
-- Optimized typography
+- **Real-time Markdown Editor** with syntax highlighting
+- **File Management System** with drag-and-drop support  
+- **Advanced Search Capabilities** powered by FlexSearch
+- **Responsive Design** that works on all devices
+- **Dark Mode Support** for comfortable reading
 
 ## Getting Started
 
-1. **Create a new document** - Click the + button in the sidebar
-2. **Write your content** - Use the markdown editor
-3. **Preview your work** - Toggle preview mode with Cmd/Ctrl + P
-4. **Save your changes** - Auto-saves as you type
+To get started with GitBook Manual:
 
-## Keyboard Shortcuts
+1. **Browse Documentation** - Navigate through the sidebar to explore different topics
+2. **Use the Editor** - Click on "Editor" in the navigation to create and edit documents
+3. **Search Content** - Press `Cmd+K` (or `Ctrl+K`) to open the search modal
+4. **Organize Files** - Create folders and organize your content structure
 
-| Shortcut | Action |
-|----------|--------|
-| `Cmd/Ctrl + S` | Save document |
-| `Cmd/Ctrl + P` | Toggle preview |
-| `Cmd/Ctrl + B` | Bold text |
-| `Cmd/Ctrl + I` | Italic text |
-| `Cmd/Ctrl + K` | Insert link |
+## Key Features
+
+### Real-time Editing
+Edit your markdown documents with live preview and auto-save functionality.
+
+### Advanced Search
+Quickly find any content across all your documents with our powerful search engine.
+
+### File Management
+Organize your documentation with folders, rename files, and manage your content structure.
 
 ## Next Steps
 
-Ready to create your first document? Head over to the [Editor](/editor) and start writing!
+- Explore the [Getting Started Guide](./getting-started.md)
+- Learn about [Advanced Features](./advanced-features.md)
+- Check out the [API Reference](./api-reference.md)
 
----
-
-*Happy documenting! 🎉*
+Happy documenting! 🚀

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { Header } from '@/components/header';
 import { FileTree } from '@/components/file-explorer/FileTree';
 import { ChevronLeft, ChevronRight, FileText, FolderPlus } from 'lucide-react';
 import type { FileTreeItem, Document } from '@/types';
@@ -65,6 +66,49 @@ async function createDocument(path: string, content: string = '', metadata = {})
   } catch (error) {
     console.error('Failed to create document:', error);
     return false;
+  }
+}
+
+async function createFolder(parentPath: string, name: string) {
+  try {
+    const response = await fetch('/api/folders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: parentPath, name }),
+    });
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error('Failed to create folder:', error);
+    return false;
+  }
+}
+
+async function deleteItem(path: string) {
+  try {
+    const response = await fetch(`/api/documents${path}`, {
+      method: 'DELETE',
+    });
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error('Failed to delete item:', error);
+    return false;
+  }
+}
+
+async function renameItem(oldPath: string, newName: string) {
+  try {
+    const response = await fetch('/api/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ oldPath, newName }),
+    });
+    const data = await response.json();
+    return data.success ? data : null;
+  } catch (error) {
+    console.error('Failed to rename item:', error);
+    return null;
   }
 }
 
@@ -169,126 +213,172 @@ export default function EditorPage() {
     }
   };
 
-  const handleCreateFolder = () => {
+  const handleCreateFolder = async () => {
     const folderName = prompt('Enter folder name:');
     if (!folderName) return;
 
-    // For now, just show a message
-    alert('Folder creation will be implemented soon!');
+    const success = await createFolder('/', folderName);
+    
+    if (success) {
+      // Reload file tree
+      const docs = await fetchDocuments();
+      setFileTree(docs);
+    } else {
+      alert('Failed to create folder. Please try again.');
+    }
   };
 
-  const handleRename = () => {
-    alert('Rename functionality will be implemented soon!');
+  const handleRename = async (item: FileTreeItem) => {
+    const newName = prompt('Enter new name:', item.name);
+    if (!newName || newName === item.name) return;
+
+    const result = await renameItem(item.path, newName);
+    
+    if (result) {
+      // If the renamed item is currently active, update the active document
+      if (activeDocument && activeDocument.path === item.path) {
+        setActiveDocument({
+          ...activeDocument,
+          path: result.newPath,
+          title: newName,
+        });
+      }
+      
+      // Reload file tree
+      const docs = await fetchDocuments();
+      setFileTree(docs);
+    } else {
+      alert('Failed to rename. Please try again.');
+    }
   };
 
-  const handleDelete = (item: FileTreeItem) => {
-    if (confirm(`Are you sure you want to delete "${item.name}"?`)) {
-      alert('Delete functionality will be implemented soon!');
+  const handleDelete = async (item: FileTreeItem) => {
+    if (!confirm(`Are you sure you want to delete "${item.name}"?`)) return;
+
+    const success = await deleteItem(item.path);
+    
+    if (success) {
+      // If the deleted item is currently active, clear the active document
+      if (activeDocument && activeDocument.path === item.path) {
+        setActiveDocument(null);
+      }
+      
+      // Reload file tree
+      const docs = await fetchDocuments();
+      setFileTree(docs);
+    } else {
+      alert('Failed to delete. Please try again.');
     }
   };
 
   return (
-    <div className="flex h-full bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar */}
-      <div
-        className={`${
-          isSidebarOpen ? 'w-64' : 'w-0'
-        } transition-all duration-300 flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 overflow-hidden`}
-      >
-        {/* Sidebar Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Files</h2>
-          <div className="flex items-center gap-2">
-            <button
-              className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              title="New File"
-              onClick={() => handleCreateFile('/')}
-            >
-              <FileText className="h-4 w-4" />
-            </button>
-            <button
-              className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              title="New Folder"
-              onClick={() => handleCreateFolder()}
-            >
-              <FolderPlus className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* File Tree */}
-        <div className="flex-1 overflow-y-auto p-2">
-          {isLoading ? (
-            <div className="text-center text-gray-500 dark:text-gray-400 mt-4">
-              Loading files...
-            </div>
-          ) : fileTree.length === 0 ? (
-            <div className="text-center text-gray-500 dark:text-gray-400 mt-4">
-              <p className="mb-2">No files yet</p>
-              <button
-                onClick={() => handleCreateFile('/')}
-                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-              >
-                Create your first document
-              </button>
-            </div>
-          ) : (
-            <FileTree
-              items={fileTree}
-              selectedPath={activeDocument?.path}
-              onSelect={handleFileSelect}
-              onCreateFile={handleCreateFile}
-              onCreateFolder={() => handleCreateFolder()}
-              onRename={() => handleRename()}
-              onDelete={handleDelete}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Sidebar Toggle */}
-      <div className="relative">
-        <button
-          className="absolute left-full top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-md p-1 shadow-md transition-all duration-300"
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+      {/* Header with search functionality */}
+      <Header />
+      
+      {/* Editor Content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar */}
+        <div
+          className={`${
+            isSidebarOpen ? 'w-64' : 'w-0'
+          } transition-all duration-300 flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 overflow-hidden`}
         >
-          {isSidebarOpen ? (
-            <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-          )}
-        </button>
-      </div>
-
-      {/* Main Editor Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-            <div className="text-center">
-              <p className="text-lg mb-2">Loading...</p>
-            </div>
-          </div>
-        ) : activeDocument ? (
-          <MarkdownEditor
-            key={activeDocument.id}
-            initialContent={activeDocument.content}
-            documentPath={activeDocument.path}
-            onSave={handleSave}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-            <div className="text-center">
-              <p className="text-lg mb-2">No document selected</p>
-              <p className="text-sm mb-4">Select a file from the sidebar or create a new one</p>
+          {/* Sidebar Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Files</h2>
+            <div className="flex items-center gap-2">
               <button
+                className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                title="New File"
                 onClick={() => handleCreateFile('/')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
-                Create New Document
+                <FileText className="h-4 w-4" />
+              </button>
+              <button
+                className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                title="New Folder"
+                onClick={() => handleCreateFolder()}
+              >
+                <FolderPlus className="h-4 w-4" />
               </button>
             </div>
           </div>
-        )}
+
+          {/* File Tree */}
+          <div className="flex-1 overflow-y-auto p-2">
+            {isLoading ? (
+              <div className="text-center text-gray-500 dark:text-gray-400 mt-4">
+                Loading files...
+              </div>
+            ) : fileTree.length === 0 ? (
+              <div className="text-center text-gray-500 dark:text-gray-400 mt-4">
+                <p className="mb-2">No files yet</p>
+                <button
+                  onClick={() => handleCreateFile('/')}
+                  className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  Create your first document
+                </button>
+              </div>
+            ) : (
+              <FileTree
+                items={fileTree}
+                selectedPath={activeDocument?.path}
+                onSelect={handleFileSelect}
+                onCreateFile={handleCreateFile}
+                onCreateFolder={() => handleCreateFolder()}
+                onRename={handleRename}
+                onDelete={handleDelete}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Sidebar Toggle */}
+        <div className="relative">
+          <button
+            className="absolute left-full top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-md p-1 shadow-md transition-all duration-300"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          >
+            {isSidebarOpen ? (
+              <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            )}
+          </button>
+        </div>
+
+        {/* Main Editor Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+              <div className="text-center">
+                <p className="text-lg mb-2">Loading...</p>
+              </div>
+            </div>
+          ) : activeDocument ? (
+            <MarkdownEditor
+              key={activeDocument.id}
+              initialContent={activeDocument.content}
+              documentPath={activeDocument.path}
+              onSave={handleSave}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+              <div className="text-center">
+                <p className="text-lg mb-2">No document selected</p>
+                <p className="text-sm mb-4">Select a file from the sidebar or create a new one</p>
+                <button
+                  onClick={() => handleCreateFile('/')}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Create New Document
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

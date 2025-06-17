@@ -18,6 +18,7 @@ import {
   Undo,
   Redo,
   FileCode,
+  ImagePlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +26,7 @@ interface EditorToolbarProps {
   onAction: (action: string, value?: string) => void;
   isPreviewMode: boolean;
   onTogglePreview: () => void;
+  onOpenImageManager?: () => void;
   isSaving?: boolean;
 }
 
@@ -32,6 +34,7 @@ export function EditorToolbar({
   onAction,
   isPreviewMode,
   onTogglePreview,
+  onOpenImageManager,
   isSaving,
 }: EditorToolbarProps) {
   const ToolButton = ({
@@ -39,14 +42,16 @@ export function EditorToolbar({
     action,
     title,
     value,
+    onClick,
   }: {
     icon: React.ElementType;
-    action: string;
+    action?: string;
     title: string;
     value?: string;
+    onClick?: () => void;
   }) => (
     <button
-      onClick={() => onAction(action, value)}
+      onClick={onClick || (() => action && onAction(action, value))}
       className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800 transition-colors"
       title={title}
     >
@@ -84,7 +89,16 @@ export function EditorToolbar({
         
         {/* Insert */}
         <ToolButton icon={Link} action="link" title="Insert Link (⌘K)" />
-        <ToolButton icon={Image} action="image" title="Insert Image" />
+        <ToolButton 
+          icon={Image} 
+          action="image" 
+          title="Insert Image URL" 
+        />
+        <ToolButton 
+          icon={ImagePlus} 
+          title="Image Manager - Upload & Insert Images"
+          onClick={onOpenImageManager}
+        />
         <ToolButton icon={Table} action="table" title="Insert Table" />
         <ToolButton icon={FileCode} action="codeblock" title="Code Block" />
         

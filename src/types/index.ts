@@ -70,3 +70,24 @@ export interface Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface ImageData {
+  id: string;
+  originalName: string;
+  fileName: string;
+  url: string;
+  size: number;
+  type: string;
+  uploadedAt: string;
+  width?: number;
+  height?: number;
+  alt?: string;
+}
+
+export interface ImageUploadProgress {
+  id: string;
+  fileName: string;
+  progress: number;
+  status: 'uploading' | 'processing' | 'completed' | 'error';
+  error?: string;
+}
