@@ -7,19 +7,39 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "${PORT:-8080}:8080"
     environment:
       - NODE_ENV=production
       - PORT=8080
+      # Site Configuration
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-http://localhost:8080}
+      - NEXT_PUBLIC_SITE_NAME=${NEXT_PUBLIC_SITE_NAME:-GitBook Manual Site}
+      - NEXT_PUBLIC_SITE_DESCRIPTION=${NEXT_PUBLIC_SITE_DESCRIPTION:-Professional Documentation Management System}
+      # Content Configuration
+      - CONTENT_DIR=${CONTENT_DIR:-content}
+      - UPLOADS_DIR=${UPLOADS_DIR:-public/uploads}
+      - IMAGES_DIR=${IMAGES_DIR:-public/uploads/images}
+      # Feature Flags
+      - ENABLE_SEARCH=${ENABLE_SEARCH:-true}
+      - ENABLE_IMAGE_UPLOAD=${ENABLE_IMAGE_UPLOAD:-true}
+      - ENABLE_EDITOR=${ENABLE_EDITOR:-true}
+      # API Configuration
+      - API_TIMEOUT=${API_TIMEOUT:-5000}
+      - SEARCH_DEBOUNCE_MS=${SEARCH_DEBOUNCE_MS:-300}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-10485760}
     restart: unless-stopped
-    # volumes commented out for production
-    # Uncomment below for development with hot reload
-    # volumes:
-    #   - .:/app
-    #   - /app/node_modules
-    #   - /app/.next
+    volumes:
+      # Persist content and uploads
+      - ./content:/app/content
+      - ./public/uploads:/app/public/uploads
     networks:
       - gitbook-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # Development service (for local development)
   gitbook-dev:
@@ -28,23 +48,62 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     ports:
-      - "8080:8080"
+      - "${DEV_PORT:-8080}:8080"
     environment:
       - NODE_ENV=development
       - PORT=8080
+      # Load all environment variables from .env
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-http://localhost:8080}
+      - NEXT_PUBLIC_SITE_NAME=${NEXT_PUBLIC_SITE_NAME:-GitBook Manual Site (Dev)}
+      - NEXT_PUBLIC_SITE_DESCRIPTION=${NEXT_PUBLIC_SITE_DESCRIPTION:-Development Environment}
+      - CONTENT_DIR=${CONTENT_DIR:-content}
+      - UPLOADS_DIR=${UPLOADS_DIR:-public/uploads}
+      - IMAGES_DIR=${IMAGES_DIR:-public/uploads/images}
+      - ENABLE_SEARCH=${ENABLE_SEARCH:-true}
+      - ENABLE_IMAGE_UPLOAD=${ENABLE_IMAGE_UPLOAD:-true}
+      - ENABLE_EDITOR=${ENABLE_EDITOR:-true}
+      - API_TIMEOUT=${API_TIMEOUT:-5000}
+      - SEARCH_DEBOUNCE_MS=${SEARCH_DEBOUNCE_MS:-300}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-10485760}
+      # Development specific
+      - NEXT_TELEMETRY_DISABLED=1
     volumes:
       - .:/app
       - /app/node_modules
       - /app/.next
+      # Persist content and uploads in development
+      - ./content:/app/content
+      - ./public/uploads:/app/public/uploads
     networks:
       - gitbook-network
     profiles:
       - dev
 
+  # Future: Database service (PostgreSQL)
+  # gitbook-db:
+  #   image: postgres:15-alpine
+  #   container_name: gitbook-postgres
+  #   environment:
+  #     - POSTGRES_DB=${DB_NAME:-magic7}
+  #     - POSTGRES_USER=${DB_USER:-magic7}
+  #     - POSTGRES_PASSWORD=${DB_PASSWORD:-ZAvEjgkEzu8K**}
+  #   volumes:
+  #     - gitbook-db-data:/var/lib/postgresql/data
+  #   networks:
+  #     - gitbook-network
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-magic7}"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #   profiles:
+  #     - db
+
 networks:
   gitbook-network:
     driver: bridge
 
-# Future: Database services will be added here
+# Future: Database volumes
 # volumes:
 #   gitbook-db-data:
+#     driver: local

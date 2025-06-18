@@ -3,27 +3,60 @@ import { writeFile, mkdir, readdir, stat } from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
-// 이미지 저장 디렉토리
-const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'images');
+// Get upload directory from environment variable
+const getUploadDir = () => {
+  const imagesDir = process.env.IMAGES_DIR || 'public/uploads/images';
+  return path.join(process.cwd(), imagesDir);
+};
 
-// 허용된 이미지 타입
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-
-// 최대 파일 크기 (10MB)
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+// Configuration from environment variables
+const config = {
+  allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
+  maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB default
+  urlPrefix: '/uploads/images',
+};
 
 async function ensureUploadDir() {
+  const uploadDir = getUploadDir();
   try {
-    await mkdir(UPLOAD_DIR, { recursive: true });
+    await mkdir(uploadDir, { recursive: true });
   } catch (error) {
     console.error('Failed to create upload directory:', error);
+    throw new Error('Could not create upload directory');
   }
+}
+
+function validateFile(file: File): { valid: boolean; error?: string } {
+  if (!config.allowedTypes.includes(file.type)) {
+    return {
+      valid: false,
+      error: `Invalid file type. Allowed types: ${config.allowedTypes.join(', ')}`
+    };
+  }
+
+  if (file.size > config.maxFileSize) {
+    const maxSizeMB = Math.round(config.maxFileSize / (1024 * 1024));
+    return {
+      valid: false,
+      error: `File too large. Maximum size is ${maxSizeMB}MB.`
+    };
+  }
+
+  return { valid: true };
+}
+
+function generateFileName(originalName: string): string {
+  const fileExtension = path.extname(originalName);
+  const timestamp = Date.now();
+  const uuid = uuidv4().split('-')[0]; // Use first part of UUID for shorter name
+  return `${timestamp}_${uuid}${fileExtension}`;
 }
 
 async function getImageList() {
   try {
     await ensureUploadDir();
-    const files = await readdir(UPLOAD_DIR);
+    const uploadDir = getUploadDir();
+    const files = await readdir(uploadDir);
     
     const imagePromises = files
       .filter(file => {
@@ -31,7 +64,7 @@ async function getImageList() {
         return ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext);
       })
       .map(async (fileName) => {
-        const filePath = path.join(UPLOAD_DIR, fileName);
+        const filePath = path.join(uploadDir, fileName);
         const stats = await stat(filePath);
         
         // 파일 확장자에서 MIME 타입 결정
@@ -41,16 +74,19 @@ async function getImageList() {
           case '.png': mimeType = 'image/png'; break;
           case '.gif': mimeType = 'image/gif'; break;
           case '.webp': mimeType = 'image/webp'; break;
+          case '.jpg':
+          case '.jpeg': mimeType = 'image/jpeg'; break;
         }
         
         return {
           id: fileName.replace(path.extname(fileName), ''),
           originalName: fileName,
           fileName: fileName,
-          url: `/uploads/images/${fileName}`,
+          url: `${config.urlPrefix}/${fileName}`,
           size: stats.size,
           type: mimeType,
           uploadedAt: stats.birthtime.toISOString(),
+          lastModified: stats.mtime.toISOString(),
         };
       });
 
@@ -68,6 +104,14 @@ async function getImageList() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Feature flag check
+    if (process.env.ENABLE_IMAGE_UPLOAD === 'false') {
+      return NextResponse.json(
+        { success: false, error: 'Image upload is disabled' },
+        { status: 403 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     
@@ -78,18 +122,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 파일 타입 검증
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    // 파일 검증
+    const validation = validateFile(file);
+    if (!validation.valid) {
       return NextResponse.json(
-        { success: false, error: 'Invalid file type. Only images are allowed.' },
-        { status: 400 }
-      );
-    }
-
-    // 파일 크기 검증
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { success: false, error: 'File too large. Maximum size is 10MB.' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
@@ -98,9 +135,9 @@ export async function POST(request: NextRequest) {
     await ensureUploadDir();
 
     // 고유한 파일명 생성
-    const fileExtension = path.extname(file.name);
-    const fileName = `${uuidv4()}${fileExtension}`;
-    const filePath = path.join(UPLOAD_DIR, fileName);
+    const fileName = generateFileName(file.name);
+    const uploadDir = getUploadDir();
+    const filePath = path.join(uploadDir, fileName);
     
     // 파일 저장
     const bytes = await file.arrayBuffer();
@@ -108,7 +145,7 @@ export async function POST(request: NextRequest) {
     await writeFile(filePath, buffer);
 
     // 웹에서 접근 가능한 URL 생성
-    const imageUrl = `/uploads/images/${fileName}`;
+    const imageUrl = `${config.urlPrefix}/${fileName}`;
     
     // 이미지 메타데이터
     const imageData = {
@@ -124,30 +161,68 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: imageData,
+      message: 'Image uploaded successfully'
     });
 
   } catch (error) {
     console.error('Image upload error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to upload image' },
+      { 
+        success: false, 
+        error: 'Failed to upload image',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const images = await getImageList();
+    // Feature flag check
+    if (process.env.ENABLE_IMAGE_UPLOAD === 'false') {
+      return NextResponse.json(
+        { success: false, error: 'Image upload is disabled' },
+        { status: 403 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const search = searchParams.get('search') || '';
+    
+    let images = await getImageList();
+    
+    // 검색 필터링
+    if (search) {
+      images = images.filter(image => 
+        image.originalName.toLowerCase().includes(search.toLowerCase()) ||
+        image.fileName.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    
+    // 제한 적용
+    if (limit > 0) {
+      images = images.slice(0, limit);
+    }
     
     return NextResponse.json({
       success: true,
       data: images,
       count: images.length,
+      config: {
+        maxFileSize: config.maxFileSize,
+        allowedTypes: config.allowedTypes,
+      }
     });
   } catch (error) {
     console.error('Failed to get images:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to retrieve images' },
+      { 
+        success: false, 
+        error: 'Failed to retrieve images',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

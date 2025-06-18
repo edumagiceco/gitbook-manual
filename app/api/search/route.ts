@@ -15,6 +15,12 @@ interface SearchResult {
   score?: number
 }
 
+// Get content directory from environment variable
+const getContentDir = () => {
+  const contentDir = process.env.CONTENT_DIR || 'content';
+  return path.join(process.cwd(), contentDir);
+};
+
 // Simple text search implementation
 function searchInText(text: string, query: string): { matches: number; excerpt?: string } {
   const lowerText = text.toLowerCase()
@@ -43,47 +49,57 @@ function searchInText(text: string, query: string): { matches: number; excerpt?:
   return { matches, excerpt }
 }
 
-// Get all markdown files from docs directory
+// Get all markdown files from content directory
 function getAllDocuments(): SearchResult[] {
-  const docsDirectory = path.join(process.cwd(), 'docs')
+  const contentDirectory = getContentDir()
   const results: SearchResult[] = []
   
   try {
-    if (!fs.existsSync(docsDirectory)) {
+    if (!fs.existsSync(contentDirectory)) {
+      console.warn(`Content directory not found: ${contentDirectory}`)
       return []
     }
     
     function processDirectory(dir: string, basePath: string = '') {
-      const files = fs.readdirSync(dir)
-      
-      files.forEach(file => {
-        const filePath = path.join(dir, file)
-        const stat = fs.statSync(filePath)
+      try {
+        const files = fs.readdirSync(dir)
         
-        if (stat.isDirectory()) {
-          processDirectory(filePath, `${basePath}/${file}`)
-        } else if (file.endsWith('.md')) {
-          const content = fs.readFileSync(filePath, 'utf8')
-          const { data: frontMatter, content: markdownContent } = matter(content)
+        files.forEach(file => {
+          const filePath = path.join(dir, file)
           
-          const relativePath = `${basePath}/${file.replace('.md', '')}`
-          const urlPath = relativePath.replace(/^\//, '/docs/')
-          
-          results.push({
-            id: relativePath,
-            title: frontMatter.title || file.replace('.md', ''),
-            content: markdownContent,
-            path: urlPath,
-            type: 'page',
-            lastModified: stat.mtime.toISOString().split('T')[0]
-          })
-        }
-      })
+          try {
+            const stat = fs.statSync(filePath)
+            
+            if (stat.isDirectory()) {
+              processDirectory(filePath, `${basePath}/${file}`)
+            } else if (file.endsWith('.md') || file.endsWith('.mdx')) {
+              const content = fs.readFileSync(filePath, 'utf8')
+              const { data: frontMatter, content: markdownContent } = matter(content)
+              
+              const relativePath = `${basePath}/${file.replace(/\.(md|mdx)$/, '')}`
+              const urlPath = relativePath.replace(/^\//, '/')
+              
+              results.push({
+                id: relativePath,
+                title: frontMatter.title || file.replace(/\.(md|mdx)$/, ''),
+                content: markdownContent,
+                path: urlPath,
+                type: 'page',
+                lastModified: stat.mtime.toISOString().split('T')[0]
+              })
+            }
+          } catch (fileError) {
+            console.error(`Error processing file ${filePath}:`, fileError)
+          }
+        })
+      } catch (dirError) {
+        console.error(`Error reading directory ${dir}:`, dirError)
+      }
     }
     
-    processDirectory(docsDirectory)
+    processDirectory(contentDirectory)
   } catch (error) {
-    console.error('Error reading docs directory:', error)
+    console.error('Error reading content directory:', error)
   }
   
   return results
@@ -98,10 +114,12 @@ export async function GET(request: NextRequest) {
     
     if (!query || query.trim().length === 0) {
       return NextResponse.json({
+        success: true,
         results: [],
         total: 0,
         query: '',
-        searchTime: 0
+        searchTime: 0,
+        contentDir: process.env.CONTENT_DIR || 'content'
       })
     }
     
@@ -143,18 +161,24 @@ export async function GET(request: NextRequest) {
     const searchTime = Date.now() - startTime
     
     return NextResponse.json({
+      success: true,
       results: paginatedResults,
       total: searchResults.length,
       query,
       searchTime,
       limit,
-      offset
+      offset,
+      contentDir: process.env.CONTENT_DIR || 'content'
     })
     
   } catch (error) {
     console.error('Search API error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        success: false,
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
@@ -168,10 +192,12 @@ export async function POST(request: NextRequest) {
     
     if (!query || query.trim().length === 0) {
       return NextResponse.json({
+        success: true,
         results: [],
         total: 0,
         query: '',
-        searchTime: 0
+        searchTime: 0,
+        contentDir: process.env.CONTENT_DIR || 'content'
       })
     }
     
@@ -218,19 +244,25 @@ export async function POST(request: NextRequest) {
     const searchTime = Date.now() - startTime
     
     return NextResponse.json({
+      success: true,
       results: paginatedResults,
       total: searchResults.length,
       query,
       searchTime,
       limit,
       offset,
-      filters
+      filters,
+      contentDir: process.env.CONTENT_DIR || 'content'
     })
     
   } catch (error) {
     console.error('Search API error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        success: false,
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

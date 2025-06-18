@@ -1,7 +1,9 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // Markdown completion provider for Monaco Editor
-export const createMarkdownCompletionProvider = (monaco: unknown) => {
+export const createMarkdownCompletionProvider = (monaco: any) => {
   return {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     provideCompletionItems: (model: any, position: any) => {
@@ -13,7 +15,15 @@ export const createMarkdownCompletionProvider = (monaco: unknown) => {
       //   endColumn: position.column,
       // });
 
-      const suggestions = [];
+      const suggestions: Array<{
+        label: string;
+        kind: any;
+        documentation: string;
+        insertText: string;
+        insertTextRules?: any;
+        range: any;
+        sortText?: string;
+      }> = [];
       const range = {
         startLineNumber: position.lineNumber,
         endLineNumber: position.lineNumber,
@@ -451,7 +461,7 @@ export const createMarkdownCompletionProvider = (monaco: unknown) => {
 };
 
 // Create hover provider for markdown
-export const createMarkdownHoverProvider = (monaco: unknown) => {
+export const createMarkdownHoverProvider = (monaco: any) => {
   return {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     provideHover: (model: any, position: any) => {
@@ -496,17 +506,15 @@ function getMarkdownHoverContent(word: string): string | null {
 }
 
 // Setup markdown language configuration
-export const setupMarkdownLanguage = (monaco: unknown) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const monacoInstance = monaco as any;
+export const setupMarkdownLanguage = (monaco: any) => {
   // Register completion provider
-  monacoInstance.languages.registerCompletionItemProvider('markdown', createMarkdownCompletionProvider(monaco));
+  monaco.languages.registerCompletionItemProvider('markdown', createMarkdownCompletionProvider(monaco));
   
   // Register hover provider
-  monacoInstance.languages.registerHoverProvider('markdown', createMarkdownHoverProvider(monaco));
+  monaco.languages.registerHoverProvider('markdown', createMarkdownHoverProvider(monaco));
 
   // Configure markdown language features
-  monacoInstance.languages.setLanguageConfiguration('markdown', {
+  monaco.languages.setLanguageConfiguration('markdown', {
     comments: {
       blockComment: ['<!--', '-->']
     },

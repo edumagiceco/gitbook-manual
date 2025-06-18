@@ -445,7 +445,7 @@ export function MarkdownEditor({
               autoIndent: 'advanced',
               formatOnPaste: true,
               formatOnType: true,
-              bracketMatching: 'always',
+              matchBrackets: 'always',
               autoClosingBrackets: 'always',
               autoClosingQuotes: 'always',
               autoSurround: 'languageDefined',

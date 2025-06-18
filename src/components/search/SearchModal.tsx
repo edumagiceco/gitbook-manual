@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, Clock, FileText, Hash, ArrowRight, Command } from 'lucide-react'
+import { siteConfig } from '@/lib/config'
 
 interface SearchResult {
   id: string
@@ -11,6 +12,7 @@ interface SearchResult {
   path: string
   type: 'page' | 'heading' | 'text'
   highlight?: string
+  score?: number
 }
 
 interface SearchModalProps {
@@ -30,7 +32,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   // Load recent searches from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('gitbook-recent-searches')
+    const saved = localStorage.getItem(siteConfig.recentSearchesKey)
     if (saved) {
       try {
         setRecentSearches(JSON.parse(saved))
@@ -47,13 +49,13 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     const updated = [
       searchQuery,
       ...recentSearches.filter(q => q !== searchQuery)
-    ].slice(0, 5) // Keep only 5 recent searches
+    ].slice(0, siteConfig.maxRecentSearches)
     
     setRecentSearches(updated)
-    localStorage.setItem('gitbook-recent-searches', JSON.stringify(updated))
+    localStorage.setItem(siteConfig.recentSearchesKey, JSON.stringify(updated))
   }, [recentSearches])
 
-  // Mock search function - replace with actual search API
+  // Real search function using API
   const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([])
@@ -63,54 +65,72 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     setIsLoading(true)
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 300))
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), siteConfig.apiTimeout)
       
-      // Mock results - replace with actual search API
-      const mockResults: SearchResult[] = [
-        {
-          id: '1',
-          title: 'Getting Started',
-          content: 'Learn how to set up and configure your GitBook workspace...',
-          path: '/docs/getting-started',
-          type: 'page' as const,
-          highlight: searchQuery
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          id: '2', 
-          title: 'API Reference',
-          content: 'Complete API documentation for developers...',
-          path: '/docs/api',
-          type: 'page' as const,
-          highlight: searchQuery
-        },
-        {
-          id: '3',
-          title: 'Configuration Options',
-          content: 'All available configuration options for your project...',
-          path: '/docs/config',
-          type: 'heading' as const,
-          highlight: searchQuery
-        }
-      ].filter(result => 
-        result.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        result.content.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+        body: JSON.stringify({ 
+          query: searchQuery,
+          limit: 20 
+        }),
+        signal: controller.signal
+      })
       
-      setResults(mockResults)
+      clearTimeout(timeoutId)
+      
+      if (!response.ok) {
+        throw new Error(`Search failed: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      
+      if (data.success && data.results) {
+        // Transform API results to SearchResult format
+        const transformedResults: SearchResult[] = data.results.map((result: {
+          id?: string;
+          title?: string;
+          content?: string;
+          description?: string;
+          path?: string;
+          url?: string;
+          type?: string;
+          score?: number;
+        }, index: number) => ({
+          id: result.id || `result-${index}`,
+          title: result.title || 'Untitled',
+          content: result.content || result.description || '',
+          path: result.path || result.url || '#',
+          type: (result.type as 'page' | 'heading' | 'text') || 'page',
+          highlight: searchQuery,
+          score: result.score
+        }))
+        
+        setResults(transformedResults)
+      } else {
+        console.warn('Search API returned unexpected format:', data)
+        setResults([])
+      }
     } catch (error) {
-      console.error('Search failed:', error)
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Search request aborted')
+      } else {
+        console.error('Search failed:', error)
+      }
       setResults([])
     } finally {
       setIsLoading(false)
     }
   }, [])
 
-  // Debounced search
+  // Debounced search with configurable delay
   useEffect(() => {
     const timer = setTimeout(() => {
       performSearch(query)
-    }, 300)
+    }, siteConfig.searchDebounceMs)
 
     return () => clearTimeout(timer)
   }, [query, performSearch])
@@ -249,6 +269,11 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     </div>
                     <div className="text-xs text-gray-400 mt-1">
                       {result.path}
+                      {result.score && (
+                        <span className="ml-2 text-blue-500">
+                          Score: {result.score.toFixed(2)}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <ArrowRight className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />

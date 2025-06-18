@@ -15,6 +15,25 @@ export interface DocsConfig {
   sidebarNav: SidebarNavItem[];
 }
 
+export interface SiteConfig {
+  name: string;
+  description: string;
+  url: string;
+  contentDir: string;
+  uploadsDir: string;
+  imagesDir: string;
+  searchIndexName: string;
+  recentSearchesKey: string;
+  maxRecentSearches: number;
+  apiTimeout: number;
+  searchDebounceMs: number;
+  features: {
+    search: boolean;
+    imageUpload: boolean;
+    editor: boolean;
+  };
+}
+
 export interface DocumentMeta {
   title: string;
   description?: string;
@@ -39,6 +58,9 @@ export interface SearchResult {
   description?: string;
   url: string;
   content?: string;
+  type?: 'page' | 'heading' | 'text';
+  score?: number;
+  highlight?: string;
 }
 
 export interface FileTreeItem {
@@ -66,6 +88,9 @@ export interface Document {
     date?: Date;
     tags?: string[];
     description?: string;
+    size?: number;
+    lastModified?: string;
+    created?: string;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -79,6 +104,7 @@ export interface ImageData {
   size: number;
   type: string;
   uploadedAt: string;
+  lastModified?: string;
   width?: number;
   height?: number;
   alt?: string;
@@ -89,5 +115,35 @@ export interface ImageUploadProgress {
   fileName: string;
   progress: number;
   status: 'uploading' | 'processing' | 'completed' | 'error';
+  error?: string;
+}
+
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  details?: string;
+  message?: string;
+}
+
+export interface HealthCheck {
+  status: 'healthy' | 'unhealthy';
+  timestamp: string;
+  uptime?: number;
+  environment?: string;
+  version?: string;
+  site?: {
+    name: string;
+    url: string;
+  };
+  features?: {
+    search: boolean;
+    imageUpload: boolean;
+    editor: boolean;
+  };
+  memory?: {
+    used: number;
+    total: number;
+  };
   error?: string;
 }

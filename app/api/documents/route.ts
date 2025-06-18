@@ -3,14 +3,19 @@ import fs from 'fs/promises';
 import path from 'path';
 import matter from 'gray-matter';
 
-const CONTENT_DIR = path.join(process.cwd(), 'content');
+// Get content directory from environment variable
+const getContentDir = () => {
+  const contentDir = process.env.CONTENT_DIR || 'content';
+  return path.join(process.cwd(), contentDir);
+};
 
 // Ensure content directory exists
 async function ensureContentDir() {
+  const contentDir = getContentDir();
   try {
-    await fs.access(CONTENT_DIR);
+    await fs.access(contentDir);
   } catch {
-    await fs.mkdir(CONTENT_DIR, { recursive: true });
+    await fs.mkdir(contentDir, { recursive: true });
   }
 }
 
@@ -28,28 +33,36 @@ async function getFileTree(dir: string): Promise<Array<{
   }>;
 }>> {
   const items = [];
-  const files = await fs.readdir(dir, { withFileTypes: true });
+  const contentDir = getContentDir();
+  
+  try {
+    const files = await fs.readdir(dir, { withFileTypes: true });
 
-  for (const file of files) {
-    const filePath = path.join(dir, file.name);
-    const relativePath = path.relative(CONTENT_DIR, filePath);
-    
-    if (file.isDirectory()) {
-      items.push({
-        id: relativePath,
-        name: file.name,
-        path: '/' + relativePath,
-        type: 'folder' as const,
-        children: await getFileTree(filePath),
-      });
-    } else if (file.name.endsWith('.md') || file.name.endsWith('.mdx')) {
-      items.push({
-        id: relativePath,
-        name: file.name,
-        path: '/' + relativePath,
-        type: 'file' as const,
-      });
+    for (const file of files) {
+      const filePath = path.join(dir, file.name);
+      const relativePath = path.relative(contentDir, filePath);
+      
+      if (file.isDirectory()) {
+        items.push({
+          id: relativePath,
+          name: file.name,
+          path: '/' + relativePath,
+          type: 'folder' as const,
+          children: await getFileTree(filePath),
+        });
+      } else if (file.name.endsWith('.md') || file.name.endsWith('.mdx')) {
+        items.push({
+          id: relativePath,
+          name: file.name,
+          path: '/' + relativePath,
+          type: 'file' as const,
+        });
+      }
     }
+  } catch (error) {
+    console.error(`Error reading directory ${dir}:`, error);
+    // Return empty array if directory doesn't exist or is inaccessible
+    return [];
   }
 
   return items;
@@ -59,16 +72,22 @@ async function getFileTree(dir: string): Promise<Array<{
 export async function GET() {
   try {
     await ensureContentDir();
-    const tree = await getFileTree(CONTENT_DIR);
+    const contentDir = getContentDir();
+    const tree = await getFileTree(contentDir);
     
     return NextResponse.json({ 
       success: true, 
-      data: tree 
+      data: tree,
+      contentDir: process.env.CONTENT_DIR || 'content' // For debugging
     });
   } catch (error) {
     console.error('Error reading documents:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to read documents' },
+      { 
+        success: false, 
+        error: 'Failed to read documents',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
@@ -87,9 +106,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate path to prevent directory traversal
+    if (docPath.includes('..') || docPath.startsWith('/')) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid path' },
+        { status: 400 }
+      );
+    }
+
     await ensureContentDir();
+    const contentDir = getContentDir();
     
-    const fullPath = path.join(CONTENT_DIR, docPath);
+    const fullPath = path.join(contentDir, docPath);
     const dir = path.dirname(fullPath);
     
     // Create directory if it doesn't exist
@@ -112,7 +140,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating document:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create document' },
+      { 
+        success: false, 
+        error: 'Failed to create document',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
