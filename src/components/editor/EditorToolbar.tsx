@@ -50,6 +50,14 @@ export function EditorToolbar({
   showTOC = false,
   onToggleTOC,
 }: EditorToolbarProps) {
+  const handleButtonClick = (action?: string, value?: string, customOnClick?: () => void) => {
+    if (customOnClick) {
+      customOnClick();
+    } else if (action) {
+      onAction(action, value);
+    }
+  };
+
   const ToolButton = ({
     icon: Icon,
     action,
@@ -64,7 +72,12 @@ export function EditorToolbar({
     onClick?: () => void;
   }) => (
     <button
-      onClick={onClick || (() => action && onAction(action, value))}
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleButtonClick(action, value, onClick);
+      }}
       className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800 transition-colors"
       title={title}
     >
@@ -142,7 +155,12 @@ export function EditorToolbar({
         {/* TOC Toggle */}
         {onToggleTOC && (
           <button
-            onClick={onToggleTOC}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleTOC();
+            }}
             className={cn(
               "p-2 rounded transition-colors",
               showTOC
@@ -158,7 +176,12 @@ export function EditorToolbar({
         {/* Scroll Sync Toggle */}
         {onToggleScrollSync && (
           <button
-            onClick={onToggleScrollSync}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleScrollSync();
+            }}
             className={cn(
               "p-2 rounded transition-colors",
               isScrollSyncEnabled
@@ -173,12 +196,17 @@ export function EditorToolbar({
         
         {/* Preview Toggle */}
         <button
-          onClick={onTogglePreview}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onTogglePreview();
+          }}
           className={cn(
             "flex items-center gap-2 px-3 py-1.5 text-sm rounded transition-colors",
             isPreviewMode
               ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800"
           )}
           title="Toggle Preview (⌘P)"
         >

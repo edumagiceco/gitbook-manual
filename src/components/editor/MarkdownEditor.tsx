@@ -205,45 +205,62 @@ export function MarkdownEditor({
     return '';
   };
 
-  const handleToolbarAction = (action: string, value?: string) => {
-    const selectedText = getSelectedText();
-    
-    switch (action) {
-      case 'bold':
-        insertTextAtCursor(`**${selectedText || 'bold text'}**`);
-        break;
-      case 'italic':
-        insertTextAtCursor(`*${selectedText || 'italic text'}*`);
-        break;
-      case 'link':
-        insertTextAtCursor(`[${selectedText || 'link text'}](url)`);
-        break;
-      case 'image':
-        insertTextAtCursor(`![alt text](image-url)`);
-        break;
-      case 'code':
-        insertTextAtCursor(`\`${selectedText || 'code'}\``);
-        break;
-      case 'codeblock':
-        insertTextAtCursor(`\`\`\`\n${selectedText || 'code block'}\n\`\`\``);
-        break;
-      case 'heading':
-        insertTextAtCursor(`${'#'.repeat(parseInt(value || '1'))} ${selectedText || 'Heading'}`);
-        break;
-      case 'list':
-        insertTextAtCursor(`- ${selectedText || 'List item'}`);
-        break;
-      case 'checklist':
-        insertTextAtCursor(`- [ ] ${selectedText || 'Task item'}`);
-        break;
-      case 'quote':
-        insertTextAtCursor(`> ${selectedText || 'Quote'}`);
-        break;
-      case 'table':
-        insertTextAtCursor(`| Header 1 | Header 2 |\n| -------- | -------- |\n| Cell 1   | Cell 2   |`);
-        break;
+  const handleToolbarAction = useCallback((action: string, value?: string) => {
+    if (!editorRef.current || !activeTab) {
+      console.warn('Editor or active tab not available for action:', action);
+      return;
     }
-  };
+
+    try {
+      const selectedText = getSelectedText();
+      
+      switch (action) {
+        case 'bold':
+          insertTextAtCursor(`**${selectedText || 'bold text'}**`);
+          break;
+        case 'italic':
+          insertTextAtCursor(`*${selectedText || 'italic text'}*`);
+          break;
+        case 'link':
+          insertTextAtCursor(`[${selectedText || 'link text'}](url)`);
+          break;
+        case 'image':
+          insertTextAtCursor(`![alt text](image-url)`);
+          break;
+        case 'code':
+          insertTextAtCursor(`\`${selectedText || 'code'}\``);
+          break;
+        case 'codeblock':
+          insertTextAtCursor(`\`\`\`\n${selectedText || 'code block'}\n\`\`\``);
+          break;
+        case 'heading':
+          insertTextAtCursor(`${'#'.repeat(parseInt(value || '1'))} ${selectedText || 'Heading'}`);
+          break;
+        case 'list':
+          insertTextAtCursor(`- ${selectedText || 'List item'}`);
+          break;
+        case 'checklist':
+          insertTextAtCursor(`- [ ] ${selectedText || 'Task item'}`);
+          break;
+        case 'quote':
+          insertTextAtCursor(`> ${selectedText || 'Quote'}`);
+          break;
+        case 'table':
+          insertTextAtCursor(`| Header 1 | Header 2 |\n| -------- | -------- |\n| Cell 1   | Cell 2   |`);
+          break;
+        case 'undo':
+          editorRef.current.trigger('keyboard', 'undo', null);
+          break;
+        case 'redo':
+          editorRef.current.trigger('keyboard', 'redo', null);
+          break;
+        default:
+          console.warn('Unknown action:', action);
+      }
+    } catch (error) {
+      console.error('Error executing toolbar action:', action, error);
+    }
+  }, [activeTab, insertTextAtCursor, getSelectedText]);
 
   // Handle clipboard image paste
   const handlePaste = useCallback(async (e: ClipboardEvent) => {
