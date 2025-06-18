@@ -1,0 +1,137 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_PERSONAL_ACCESS_TOKEN_HERE"
+      }
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
+    },
+    "selenium": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    },
+    "terminal": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@dillip285/mcp-terminal"
+      ],
+      "config": {
+        "allowedCommands": [
+          "npm",
+          "npx",
+          "node",
+          "git",
+          "python",
+          "pip",
+          "pipx",
+          "pipenv",
+          "poetry",
+          "pytest",
+          "tox",
+          "flake8",
+          "pylint",
+          "black",
+          "isort",
+          "mypy",
+          "coverage",
+          "cProfile",
+          "pyinstrument",
+          "ab",
+          "wrk",
+          "siege",
+          "locust",
+          "k6",
+          "hey",
+          "pytest-benchmark",
+          "curl",
+          "http",
+          "ls",
+          "dir"
+        ],
+        "defaultTimeout": 30000
+      }
+    },
+    "googleSearch": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "g-search-mcp"
+      ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/magic/data/claude/gitbook"
+      ]
+    },
+    "playwright-stealth": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@pvinis/playwright-stealth-mcp-server"
+      ]
+    },
+    "text-editor": {
+      "command": "npx",
+      "args": [
+        "mcp-server-text-editor"
+      ]
+    },
+    "openai-gpt-image-mcp": {
+      "command": "node",
+      "args": [
+        "/Users/magic/work/openai-gpt-image-mcp/dist/index.js"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "YOUR_OPENAI_API_KEY_HERE"
+      }
+    }
+  },
+  "mcpClient": {
+    "enabled": true,
+    "triggerKeywords": {
+      "edit": [
+        "text-editor"
+      ],
+      "write": [
+        "text-editor"
+      ],
+      "append": [
+        "text-editor"
+      ],
+      "replace": [
+        "text-editor"
+      ],
+      "read": [
+        "filesystem"
+      ],
+      "list": [
+        "filesystem"
+      ],
+      "search": [
+        "filesystem"
+      ]
+    }
+  }
+}

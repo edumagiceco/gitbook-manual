@@ -16,6 +16,7 @@ interface PreviewPaneProps {
 
 export interface PreviewPaneRef {
   scrollToPosition: (ratio: number) => void;
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export const PreviewPane = forwardRef<PreviewPaneRef, PreviewPaneProps>(({ content, onScroll }, ref) => {
@@ -84,7 +85,8 @@ export const PreviewPane = forwardRef<PreviewPaneRef, PreviewPaneProps>(({ conte
         const targetScrollTop = maxScrollTop * ratio;
         scrollContainerRef.current.scrollTop = targetScrollTop;
       }
-    }
+    },
+    scrollContainerRef
   }), []);
 
   const handleScroll = () => {
@@ -102,6 +104,20 @@ export const PreviewPane = forwardRef<PreviewPaneRef, PreviewPaneProps>(({ conte
     });
   };
 
+  // Add IDs to headings for scroll spy
+  const addHeadingIds = (html: string): string => {
+    return html.replace(/<h([1-6])>(.*?)<\/h[1-6]>/gi, (match, level, text) => {
+      const cleanText = text.replace(/<[^>]*>/g, ''); // Remove HTML tags
+      const id = cleanText
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '-')      // Replace spaces with hyphens
+        .replace(/^-+|-+$/g, '');  // Remove leading/trailing hyphens
+      
+      return `<h${level} id="${id}">${text}</h${level}>`;
+    });
+  };
+
   useEffect(() => {
     const processMarkdown = async () => {
       try {
@@ -115,7 +131,9 @@ export const PreviewPane = forwardRef<PreviewPaneRef, PreviewPaneProps>(({ conte
           .use(rehypeKatex) // Render math with KaTeX
           .process(processedContent);
         
-        setHtml(result.toString());
+        // Add IDs to headings
+        const htmlWithIds = addHeadingIds(result.toString());
+        setHtml(htmlWithIds);
       } catch (error) {
         console.error('Failed to process markdown:', error);
         setHtml('<p>Error processing markdown</p>');

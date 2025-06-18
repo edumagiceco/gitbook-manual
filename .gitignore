@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# MCP configuration with secrets
+.mcp.json
+
+# Claude documentation - do not upload
+CLAUDE.md

@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { EditorToolbar } from './EditorToolbar';
 import { PreviewPane, PreviewPaneRef } from './PreviewPane';
 import { TableOfContents } from './TableOfContents';
+import { DocumentStats } from './DocumentStats';
 import { EditorTabs, useEditorTabs } from './EditorTabs';
 import { FindReplaceModal } from './FindReplaceModal';
 import { ImageManager } from './ImageManager';
@@ -56,6 +57,7 @@ export function MarkdownEditor({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isImageManagerOpen, setIsImageManagerOpen] = useState(false);
   const [showTOC, setShowTOC] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   const [isFindReplaceOpen, setIsFindReplaceOpen] = useState(false);
 
   // Monaco Editor reference
@@ -197,19 +199,19 @@ export function MarkdownEditor({
     }
   }, [activeTab, updateTabContent]);
 
-  const getSelectedText = () => {
-    if (editorRef.current) {
-      const selection = editorRef.current.getSelection();
-      return editorRef.current.getModel().getValueInRange(selection);
-    }
-    return '';
-  };
-
   const handleToolbarAction = useCallback((action: string, value?: string) => {
     if (!editorRef.current || !activeTab) {
       console.warn('Editor or active tab not available for action:', action);
       return;
     }
+
+    const getSelectedText = () => {
+      if (editorRef.current) {
+        const selection = editorRef.current.getSelection();
+        return editorRef.current.getModel().getValueInRange(selection);
+      }
+      return '';
+    };
 
     try {
       const selectedText = getSelectedText();
@@ -260,7 +262,7 @@ export function MarkdownEditor({
     } catch (error) {
       console.error('Error executing toolbar action:', action, error);
     }
-  }, [activeTab, insertTextAtCursor, getSelectedText]);
+  }, [activeTab, insertTextAtCursor]);
 
   // Handle clipboard image paste
   const handlePaste = useCallback(async (e: ClipboardEvent) => {
@@ -415,6 +417,8 @@ export function MarkdownEditor({
           onToggleScrollSync={() => setIsScrollSyncEnabled(!isScrollSyncEnabled)}
           showTOC={showTOC}
           onToggleTOC={() => setShowTOC(!showTOC)}
+          showStats={showStats}
+          onToggleStats={() => setShowStats(!showStats)}
         />
       </div>
 
@@ -422,7 +426,7 @@ export function MarkdownEditor({
       <div className="flex-1 flex overflow-hidden">
         {/* Editor Pane */}
         <div className={`${isPreviewMode ? 'hidden md:block' : 'block'} ${
-          showTOC ? 'md:w-1/3' : isPreviewMode ? 'md:w-1/2' : 'w-full'
+          showTOC && showStats ? 'md:w-1/4' : (showTOC || showStats) ? 'md:w-1/3' : isPreviewMode ? 'md:w-1/2' : 'w-full'
         } h-full`}>
           <MonacoEditor
             height="100%"
@@ -472,8 +476,8 @@ export function MarkdownEditor({
 
         {/* Preview Pane */}
         {(isPreviewMode || (typeof window !== 'undefined' && window.innerWidth >= 768)) && (
-          <div className={`${isPreviewMode ? 'w-full md:w-1/2' : 'hidden md:block'} ${
-            showTOC ? 'md:w-1/3' : 'md:w-1/2'
+          <div className={`${isPreviewMode ? 'w-full' : 'hidden md:block'} ${
+            showTOC && showStats ? 'md:w-1/4' : (showTOC || showStats) ? 'md:w-1/3' : 'md:w-1/2'
           } h-full border-l border-gray-200 dark:border-gray-700`}>
             <PreviewPane 
               ref={previewRef}
@@ -485,11 +489,26 @@ export function MarkdownEditor({
 
         {/* TOC Pane */}
         {showTOC && (
-          <div className="w-full md:w-1/3 h-full border-l border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+          <div className={`w-full ${showStats ? 'md:w-1/4' : 'md:w-1/3'} h-full border-l border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800`}>
             <TableOfContents 
               content={content}
               onHeadingClick={handleTOCHeadingClick}
               className="h-full"
+              maxLevel={4}
+              minLevel={1}
+              enableScrollSpy={true}
+              scrollContainer={previewRef.current?.scrollContainerRef?.current || null}
+            />
+          </div>
+        )}
+        
+        {/* Stats Pane */}
+        {showStats && (
+          <div className={`w-full ${showTOC ? 'md:w-1/4' : 'md:w-1/3'} h-full border-l border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800`}>
+            <DocumentStats 
+              content={content}
+              className="h-full"
+              mode="detailed"
             />
           </div>
         )}
@@ -511,7 +530,7 @@ export function MarkdownEditor({
           {lastSaved && !isSaving && (
             <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
           )}
-          <span>{content.length} characters</span>
+          <DocumentStats content={content} mode="compact" />
           <span className="text-xs text-gray-500">
             {tabs.length} tab{tabs.length !== 1 ? 's' : ''} open
           </span>

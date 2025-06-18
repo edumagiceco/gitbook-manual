@@ -22,6 +22,7 @@ import {
   Link2,
   Hash,
   Search,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -36,6 +37,8 @@ interface EditorToolbarProps {
   onToggleScrollSync?: () => void;
   showTOC?: boolean;
   onToggleTOC?: () => void;
+  showStats?: boolean;
+  onToggleStats?: () => void;
 }
 
 export function EditorToolbar({
@@ -49,6 +52,8 @@ export function EditorToolbar({
   onToggleScrollSync,
   showTOC = false,
   onToggleTOC,
+  showStats = false,
+  onToggleStats,
 }: EditorToolbarProps) {
   const handleButtonClick = (action?: string, value?: string, customOnClick?: () => void) => {
     if (customOnClick) {
@@ -170,6 +175,27 @@ export function EditorToolbar({
             title="Toggle Table of Contents"
           >
             <Hash className="h-4 w-4" />
+          </button>
+        )}
+        
+        {/* Stats Toggle */}
+        {onToggleStats && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleStats();
+            }}
+            className={cn(
+              "p-2 rounded transition-colors",
+              showStats
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800"
+            )}
+            title="문서 통계 표시"
+          >
+            <BarChart3 className="h-4 w-4" />
           </button>
         )}
         
