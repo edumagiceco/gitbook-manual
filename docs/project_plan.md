@@ -191,19 +191,20 @@ GitBook과 유사한 기본적인 레이아웃과 UI/UX 구현
 
 ## 📚 GitHub 저장소 업로드 완료! ✅
 
-### 현재 상태 (2025-06-17)
+### 최신 상태 (2025-06-18)
 - ✅ **로컬 Git 저장소**: 초기화 완료
-- ✅ **원격 저장소 URL**: MagicecoleAI/gitbook으로 설정
-- ✅ **보안 설정**: .gitignore로 .env 파일 제외 처리
-- ✅ **GitHub 저장소 생성**: MagicecoleAI 조직에 성공 생성
-- ✅ **코드 푸시**: 완료! (커밋 d330d01)
+- ✅ **원격 저장소 URL**: edumagiceco/gitbook-manual로 업데이트
+- ✅ **보안 설정**: .gitignore로 .env, .mcp.json, CLAUDE.md 제외 처리
+- ✅ **GitHub 저장소**: 새로운 저장소에 성공 업로드
+- ✅ **코드 푸시**: 완료! (커밋 6edf5a9)
+- ✅ **보안 검증**: API 키 및 민감 정보 제외 확인
 
 ### 🚀 저장소 정보
-- **GitHub URL**: https://github.com/MagicecoleAI/gitbook
-- **저장소 ID**: 1003514063
-- **생성일**: 2025-06-17T09:05:19Z
+- **GitHub URL**: https://github.com/edumagiceco/gitbook-manual
+- **최신 커밋**: 6edf5a9 (Enhanced editor features and documentation update)
+- **생성일**: 2025-06-18
 - **가시성**: Public
-- **조직**: MagicecoleAI
+- **조직**: edumagiceco
 
 ### 📋 다음 단계
 1. ✅ GitHub Actions CI/CD 설정 검토
